@@ -27,32 +27,35 @@
 # See doc/COPYRIGHT.rdoc for more details.
 #++
 
-require_relative '../../../../legacy_spec_helper'
+module OpenProject::TextFormatting::Formatters
+  class Base
+    attr_reader :options, :project
 
-describe Redmine::WikiFormatting::NullFormatter::Formatter do
-  before do
-    @formatter = Redmine::WikiFormatting::NullFormatter::Formatter
-  end
-
-  it 'should plain text' do
-    assert_html_output('This is some input' => 'This is some input')
-  end
-
-  it 'should escaping' do
-    assert_html_output(
-      'this is a <script>'      => 'this is a &lt;script&gt;'
-    )
-  end
-
-  private
-
-  def assert_html_output(to_test, expect_paragraph = true)
-    to_test.each do |text, expected|
-      assert_equal((expect_paragraph ? "<p>#{expected}</p>" : expected), @formatter.new(text).to_html, "Formatting the following text failed:\n===\n#{text}\n===\n")
+    def initialize(options)
+      @options = options
+      @project = options[:project]
     end
-  end
 
-  def to_html(text)
-    @formatter.new(text).to_html
+    def to_html(text)
+      raise NotImplementedError
+    end
+
+    protected
+
+    def filters
+      []
+    end
+
+    protected
+
+    def located_filters
+      filters.map do |f|
+        if [Symbol, String].include? f.class
+          OpenProject::TextFormatting::Filters.const_get("#{f}_filter".classify)
+        else
+          f
+        end
+      end
+    end
   end
 end
