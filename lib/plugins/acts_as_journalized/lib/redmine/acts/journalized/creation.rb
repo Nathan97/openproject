@@ -142,8 +142,13 @@ module Redmine::Acts::Journalized
 
         attributes_setter.call(initial_changes)
 
-        # Call the journal creating method
-        changed_data = fill_object.send(:merge_journal_changes)
+        # Get the changed attributes
+        changed_data = fill_object.changed.inject({}) do |h, attr|
+          h[attr] = fill_object.attribute_change(attr) unless !fill_object.attribute_change(attr).nil? &&
+                                                              fill_object.attribute_change(attr)[0].blank? &&
+                                                              fill_object.attribute_change(attr)[1].blank?
+          h
+        end.slice(*journaled_columns)
 
         new_journal.version = 1
         new_journal.activity_type = activity_type
